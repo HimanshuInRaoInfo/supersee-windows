@@ -47,13 +47,13 @@ class BrowserHistory {
      */
     getMozillaBasedBrowserHistory = async (browserName, title) => {
         try {
-            const cleanedTitle = getCleanedTitle(title, browserName);
-            const browserPaths = getBrowserPath(browserName);
+            const cleanedTitle = this.getCleanedTitle(title, browserName);
+            const browserPaths = this.getBrowserPath(browserName);
             if (!browserPaths || browserPaths.length === 0) {
                 return [];
             }
 
-            const tempDir = getTempDir();
+            const tempDir = this.getTempDir();
             const dbPaths = [];
             let historyData = [];
 
@@ -75,7 +75,7 @@ class BrowserHistory {
                     ORDER BY last_visit_time DESC 
                     LIMIT 1 OFFSET 0;
                 `;
-                console.log("SQL Query for Mozilla-Based Browser:", sql);
+                // console.log("SQL Query for Mozilla-Based Browser:", sql);
 
                 const rows = db.prepare(sql).all();
                 if (rows.length > 0) {
@@ -85,7 +85,7 @@ class BrowserHistory {
             }
 
             // Clean up temporary files
-            deleteTempFiles(dbPaths);
+            this.deleteTempFiles(dbPaths);
 
             return historyData;
         } catch (error) {
@@ -103,14 +103,14 @@ class BrowserHistory {
      */
     getChromeBasedBrowserHistory = async (browserName, title) => {
         try {
-            const cleanedTitle = getCleanedTitle(title, browserName);
-            const browserPaths = getBrowserPath(browserName);
+            const cleanedTitle = this.getCleanedTitle(title, browserName);
+            const browserPaths = this.getBrowserPath(browserName);
 
             if (!browserPaths || browserPaths.length === 0) {
                 return [];
             }
 
-            const tempDir = getTempDir();
+            const tempDir = this.getTempDir();
             const dbPaths = [];
             let historyData = [];
 
@@ -130,7 +130,7 @@ class BrowserHistory {
                 GROUP BY title 
                 ORDER BY last_visit_time DESC;
             `;
-                console.log("SQL Query for Chrome-Based Browser:", sql);
+                // console.log("SQL Query for Chrome-Based Browser:", sql);
 
                 const rows = db.prepare(sql).all();
                 if (rows.length > 0) {
@@ -141,7 +141,7 @@ class BrowserHistory {
             }
 
             // Clean up temporary files
-            deleteTempFiles(dbPaths);
+            this.deleteTempFiles(dbPaths);
 
             return historyData;
         } catch (error) {
@@ -159,8 +159,8 @@ class BrowserHistory {
      */
     getMaxthonBasedBrowserHistory = async (browserName, title) => {
         try {
-            const cleanedTitle = getCleanedTitle(title, browserName);
-            const browserPaths = getBrowserPath(browserName);
+            const cleanedTitle = this.getCleanedTitle(title, browserName);
+            const browserPaths = this.getBrowserPath(browserName);
 
             if (!browserPaths || browserPaths.length === 0) {
                 console.warn("No valid browser path found for Maxthon.");
@@ -181,7 +181,7 @@ class BrowserHistory {
             ORDER BY zlastvisittime DESC 
             LIMIT 1 OFFSET 0;
         `;
-            console.log("SQL Query for Maxthon-Based Browser:", sql);
+            // console.log("SQL Query for Maxthon-Based Browser:", sql);
 
             return await getDataFromDatabase(browserPath, sql);
         } catch (error) {
@@ -202,7 +202,7 @@ class BrowserHistory {
             switch (browserName) {
                 case browsers.FIREFOX:
                 case browsers.SEAMONKEY:
-                    return await getMozillaBasedBrowserHistory(browserName, title);
+                    return await this.getMozillaBasedBrowserHistory(browserName, title);
 
                 case browsers.CHROME:
                 case browsers.OPERA:
@@ -211,10 +211,10 @@ class BrowserHistory {
                 case browsers.BRAVE:
                 case browsers.EDGE:
                 case browsers.AVAST:
-                    return await getChromeBasedBrowserHistory(browserName, title);
+                    return await this.getChromeBasedBrowserHistory(browserName, title);
 
                 case browsers.MAXTHON:
-                    return await getMaxthonBasedBrowserHistory(browserName, title);
+                    return await this.getMaxthonBasedBrowserHistory(browserName, title);
 
                 default:
                     console.warn(`Unsupported browser: ${browserName}`);
@@ -264,9 +264,9 @@ class BrowserHistory {
     deleteTempFiles = (paths) => {
         paths.forEach(filePath => {
             try {
-                fs.unlinkSync(filePath);
-                fs.unlinkSync(`${filePath}-wal`);
-                console.log(`Deleted: ${filePath} and ${filePath}-wal`);
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath);
+                }
             } catch (error) {
                 console.warn(`Failed to delete: ${filePath} or ${filePath}-wal`, error.message);
             }
@@ -313,7 +313,7 @@ class BrowserHistory {
             .trim();
 
         // Step 4: Limit title to the first 7 words
-        cleanedTitle = getFirst7WordsIfLong(cleanedTitle);
+        cleanedTitle = this.getFirst7WordsIfLong(cleanedTitle);
 
         // Step 5: Decode URI-encoded components
         try {

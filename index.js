@@ -1,82 +1,13 @@
-const GetActiveWindow = require("./src/get-active-window")
-const BrowserHistory = require("./src/get-browser-url")
+const GetActiveWindow = require("./src/get-active-window");
+const BrowserHistory = require("./src/get-browser-url");
 const FileOperation = require("./src/file-operation");
 const GetSuperseeWindowWithActiveWin = require("./src/get-suersee-windows");
+
 class GetSuperseeWindow {
-    browserLists = [
-        {
-            "title": "Avast Secure Browser"
-        },
-        {
-            "title": "Yandex with voice assistant Alice"
-        },
-        {
-            "title": "Pale Moon web browser"
-        },
-        {
-            "title": "Waterfox"
-        },
-        {
-            "title": "Slimjet"
-        },
-        {
-            "title": "Falkon"
-        },
-        {
-            "title": "Opera GX"
-        },
-        {
-            "title": "Chromium"
-        },
-        {
-            "title": "Epic Privacy"
-        },
-        {
-            "title": "SeaMonkey"
-        },
-        {
-            "title": "Midori"
-        },
-        {
-            "title": "Netscape"
-        },
-        {
-            "title": "Maxthon"
-        },
-        {
-            "title": "UC Browser"
-        },
-        {
-            "title": "Tor Browser"
-        },
-        {
-            "title": "Vivaldi"
-        },
-        {
-            "title": "Internet Explorer"
-        },
-        {
-            "title": "Brave"
-        },
-        {
-            "title": "Opera"
-        },
-        {
-            "title": "Safari"
-        },
-        {
-            "title": "Microsoft Edge"
-        },
-        {
-            "title": "Firefox"
-        },
-        {
-            "title": "Google Chrome"
-        }
-    ]
     fileOperation = new FileOperation();
     getActiveWindow = new GetActiveWindow();
     getSuperseeWin = new GetSuperseeWindowWithActiveWin();
+
     constructor() { }
 
     setBrowsersList(browserLists) {
@@ -87,109 +18,39 @@ class GetSuperseeWindow {
         try {
             return this.fileOperation.readBrowserList();
         } catch (error) {
-            console.error("Error while browser list", error);
+            console.error("Error reading browser list:", error.message);
+            return []; // Return empty array if there is an error
         }
     }
 
-    getActiveWindowWithUrl() {
-        const browserList = this.getBrowserList();
-        this.getActiveWindow.getActiveWindows().then((currentApplication) => {
-            if (currentApplication) {
-                this.getSuperseeWin.activeWindow(currentApplication, browserList).then((currentApp) => {
-                    console.log("Getting current application with url", currentApp);
-                    console.log("");
-                    console.log("");
-                    console.log("");
-                    console.log("");
-                    console.log("");
-                    console.log("");
-                }).catch((error) => {
-                    console.error("Error while getting current app", error);
-                });
-            } else {
-                console.log("Error while getting window", currentApplication)
+    async getActiveWindowWithUrl() {
+        try {
+            const browserList = this.getBrowserList();
+            const currentApplication = await this.getActiveWindow.getActiveWindows();
+
+            if (!currentApplication) {
+                console.log("No active window found.");
+                return;
             }
-        })
+
+            const currentApp = await this.getSuperseeWin.activeWindow(currentApplication, browserList);
+
+            if (currentApp) {
+                console.log("\nCurrent application with URL:", currentApp, "\n");
+                return currentApp;
+            }
+
+            console.log("Current application is not a browser.");
+            return { ...currentApplication, isBrowser: false }; // Mark as non-browser
+        } catch (error) {
+            console.error("Error retrieving active window or URL:", error.message);
+        }
     }
 }
 
-let getWindows = new GetSuperseeWindow();
-
-// getWindows.setBrowsersList([
-//     {
-//         "title": "Avast Secure Browser"
-//     },
-//     {
-//         "title": "Yandex with voice assistant Alice"
-//     },
-//     {
-//         "title": "Pale Moon web browser"
-//     },
-//     {
-//         "title": "Waterfox"
-//     },
-//     {
-//         "title": "Slimjet"
-//     },
-//     {
-//         "title": "Falkon"
-//     },
-//     {
-//         "title": "Opera GX"
-//     },
-//     {
-//         "title": "Chromium"
-//     },
-//     {
-//         "title": "Epic Privacy"
-//     },
-//     {
-//         "title": "SeaMonkey"
-//     },
-//     {
-//         "title": "Midori"
-//     },
-//     {
-//         "title": "Netscape"
-//     },
-//     {
-//         "title": "Maxthon"
-//     },
-//     {
-//         "title": "UC Browser"
-//     },
-//     {
-//         "title": "Tor Browser"
-//     },
-//     {
-//         "title": "Vivaldi"
-//     },
-//     {
-//         "title": "Internet Explorer"
-//     },
-//     {
-//         "title": "Brave"
-//     },
-//     {
-//         "title": "Opera"
-//     },
-//     {
-//         "title": "Safari"
-//     },
-//     {
-//         "title": "Microsoft Edge"
-//     },
-//     {
-//         "title": "Firefox"
-//     },
-//     {
-//         "title": "Google Chrome"
-//     }
-// ]);
-
+const getWindows = new GetSuperseeWindow();
 setInterval(() => {
     getWindows.getActiveWindowWithUrl();
-}, 5000)
-
+}, 5000);
 
 module.exports = GetSuperseeWindow;

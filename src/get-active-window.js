@@ -1,20 +1,20 @@
-import { activeWindow } from 'get-windows';
-// const activeWindow = require("get-windows");
+const activeWindow = require("active-win");
 
 class GetActiveWindow {
     constructor() { }
 
     /**
-     * Retrieves the currently active windows.
-     * @returns {Promise<Object>} The active window information.
+     * Retrieves the currently active window information.
+     * @returns {Promise<Object>} A promise resolving to the active window information.
+     * @throws {Error} Throws an error if retrieval fails.
      */
     async getActiveWindows() {
         try {
-            const result = await activeWindow({ 'screenRecordingPermission': false });
-            return result; // Returns the active window information
+            const result = await activeWindow({ screenRecordingPermission: false });
+            return result || {}; // Return an empty object if no result
         } catch (error) {
-            console.error("Error in getting active window:", error);
-            throw new Error("Failed to retrieve active window."); // Rethrow the error to be handled by the caller
+            console.error("Error retrieving the active window:", error);
+            throw new Error("Failed to retrieve active window."); // Keep meaningful error messages
         }
     }
 }

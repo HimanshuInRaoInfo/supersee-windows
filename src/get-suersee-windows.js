@@ -6,53 +6,66 @@ class GetSuperseeWindowWithActiveWin extends BrowserHistory {
     }
 
     /**
-     * 
-     * @param {Object} currentApplication - Current Application object get by get-windows library. 
-     * @param {Array} browserLists - All browser list by the json file.
+     * Retrieves the active window's URL if it matches any browser in the list.
+     * @param {Object} currentApplication - The current application object obtained from get-windows library.
+     * @param {Array} browserLists - A list of browsers from the JSON file.
+     * @returns {Object} - The updated current application object with a URL if it's a browser.
      */
     async activeWindow(currentApplication, browserLists) {
         try {
+            const applicationName = currentApplication.owner.name.toLowerCase();
+            const browser = browserLists?.find(browser => applicationName.includes(browser.title.toLowerCase()));
 
-            let currentBrowser;
-            const applicationName = currentApplication.owner.name;
-            if (browserLists) {
-                let browseObject = browserLists.find(browser => applicationName.toLowerCase().includes(browser.title.toLowerCase()));
-                if (browseObject && browseObject.title) {
-                    currentBrowser = browserLists.find(browser =>
-                        applicationName.toLowerCase().includes(browser.title.toLowerCase())
-                    ).title;
-                }
+            if (!browser) {
+                currentApplication.isBrowser = false;
+                return currentApplication;
             }
 
-            if (currentBrowser) {
-                currentApplication.isBrowser = true;
-                const applicationTitle = currentApplication.title;
-                this.getBrowserUrl(currentBrowser, applicationTitle)
+            // If a matching browser is found
+            currentApplication.isBrowser = true;
+            const applicationTitle = currentApplication.title;
+            const currentBrowserTabUrl = await this.getBrowserUrl(browser.title, applicationTitle);
+
+            if (currentBrowserTabUrl) {
+                const url = new URL(currentBrowserTabUrl);
+                let browserOrigin = "";
+                if (url.origin == null || url.origin == "null" || !url.origin) {
+                    browserOrigin = url.href;
+                } else {
+                    browserOrigin = url.origin;
+                } // Use origin if available, otherwise full URL
+                currentApplication.url = browserOrigin;
+                console.log("Current Browser Tab URL:", url);
             } else {
-                currentApplication.isBrowser = false;
+                currentApplication.url = "";
             }
 
             return currentApplication;
         } catch (error) {
             console.error("Error retrieving the supersee window:", error);
-            throw new Error("Failed to retrieve supersee window."); // Keep meaningful error messages
+            throw new Error("Failed to retrieve supersee window.");
         }
     }
 
     /**
-     * 
-     * @param {String} currentBrowserName - Current matched browser name. 
-     * @param {String} applicationTitle - current browser application title.
+     * Retrieves the browser's URL based on its name and the application title.
+     * @param {String} currentBrowserName - The name of the current matched browser.
+     * @param {String} applicationTitle - The title of the current browser application.
+     * @returns {String} - The URL of the current browser tab.
      */
     async getBrowserUrl(currentBrowserName, applicationTitle) {
-        console.log("Getting browser url", currentBrowserName, applicationTitle);
-        console.log("");
-        console.log("");
-        console.log("");
-        this.getBrowserHistoryByName(currentBrowserName, applicationTitle).then((value) => {
-            console.log(" ******** Current application url ******** ", value);
-        })
-
+        try {
+            const history = await this.getBrowserHistoryByName(currentBrowserName, applicationTitle);
+            if (history.length > 0) {
+                const browserUrl = history[0].url;
+                console.log("******** Current application URL ********", browserUrl);
+                return browserUrl;
+            }
+            return "";
+        } catch (error) {
+            console.error("Error retrieving browser history:", error);
+            return "";
+        }
     }
 }
 
