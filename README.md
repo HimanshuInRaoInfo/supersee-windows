@@ -62,7 +62,7 @@ Here is an example of the object returned:
 {
   "platform": "windows",
   "id": 2032686,
-  "title": "Code Refinement Request - Google Chrome",
+  "title": "Hello World - Google Chrome",
   "owner": {
     "processId": 14400,
     "path": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
@@ -76,7 +76,7 @@ Here is an example of the object returned:
   },
   "memoryUsage": 348274688,
   "isBrowser": true,
-  "url": "https://chatgpt.com"
+  "url": "https://www.google.com"
 }
 ```
 
