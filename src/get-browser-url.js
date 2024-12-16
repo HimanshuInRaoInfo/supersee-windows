@@ -53,16 +53,15 @@ class BrowserHistory {
                 return [];
             }
 
-            const tempDir = this.getTempDir();
             const dbPaths = [];
             let historyData = [];
 
             for (const browserPath of browserPaths) {
+                const tempDir = this.getTempDir();
                 const tempDbPath = path.join(tempDir, `${uuidV4()}.sqlite`);
                 dbPaths.push(tempDbPath);
-
                 fs.copyFileSync(browserPath, tempDbPath);
-                const db = new Database(tempDbPath);
+                const db = new Database(browserPath);
 
                 const sql = `
                     SELECT DISTINCT 
@@ -70,12 +69,8 @@ class BrowserHistory {
                         datetime(last_visit_date / 1000000, 'unixepoch') AS last_visit_time, 
                         url 
                     FROM moz_places 
-                    WHERE title LIKE '%${cleanedTitle}%' 
-                    GROUP BY title 
-                    ORDER BY last_visit_time DESC 
-                    LIMIT 1 OFFSET 0;
+                    WHERE title LIKE '%${cleanedTitle}%'
                 `;
-                // console.log("SQL Query for Mozilla-Based Browser:", sql);
 
                 const rows = db.prepare(sql).all();
                 if (rows.length > 0) {
@@ -105,10 +100,9 @@ class BrowserHistory {
         try {
             const cleanedTitle = this.getCleanedTitle(title, browserName);
             const browserPaths = this.getBrowserPath(browserName);
-
             if (!browserPaths || browserPaths.length === 0) {
                 return [];
-            }
+            }            
 
             const tempDir = this.getTempDir();
             const dbPaths = [];
@@ -117,20 +111,20 @@ class BrowserHistory {
             for (const browserPath of browserPaths) {
                 const tempDbPath = path.join(tempDir, `${uuidV4()}.sqlite`);
                 dbPaths.push(tempDbPath);
-
                 fs.copyFileSync(browserPath, tempDbPath);
                 const db = new Database(tempDbPath);
 
                 const sql = `
                 SELECT 
                     title, 
-                    url 
+                    url,
+                    last_visit_time
                 FROM urls 
                 WHERE title LIKE '%${cleanedTitle}%' 
                 GROUP BY title 
-                ORDER BY last_visit_time DESC;
+                ORDER BY last_visit_time DESC
+                LIMIT 1 OFFSET 0;
             `;
-                // console.log("SQL Query for Chrome-Based Browser:", sql);
 
                 const rows = db.prepare(sql).all();
                 if (rows.length > 0) {
@@ -140,8 +134,11 @@ class BrowserHistory {
                 db.close();
             }
 
+            console.log("\n ********** History Data ********** \n", historyData);
+
             // Clean up temporary files
             this.deleteTempFiles(dbPaths);
+
 
             return historyData;
         } catch (error) {
@@ -291,10 +288,11 @@ class BrowserHistory {
         }
 
         let cleanedTitle = title;
-
+        cleanedTitle = cleanedTitle.replace("​ ", " ");
         // Step 1: Remove the browser name
         const browserNamePattern = `- ${browserName.replace("-", " ")}`;
-        cleanedTitle = cleanedTitle.replace(browserNamePattern, "").trim();
+        const browserNamePatternTwo = `— ${browserName.replace("-", " ")}`;
+        cleanedTitle = cleanedTitle.replace(browserNamePattern, "").replace(browserNamePatternTwo, "").trim();
 
         // Step 2: Handle special character "ΓÇö"
         const specialChar = "ΓÇö";
@@ -304,16 +302,19 @@ class BrowserHistory {
         }
 
         // Step 3: Process delimiters and sanitize input
-        cleanedTitle = cleanedTitle
-            .replace(specialChar, "-") // Replace "ΓÇö" with "-"
-            .split("-")[0] // Take part before first "-"
+
+        if (cleanedTitle.includes(specialChar)) {
+            cleanedTitle = cleanedTitle.replace(specialChar, "-").split("-")[0] // Replace "ΓÇö" with "-"
+        }
+
+        cleanedTitle = cleanedTitle // Take part before first "-"
             .split("|")[0] // Take part before "|"
             .split(":")[0] // Take part before ":"
-            .replace(/'/g, "''") // Escape single quotes
+            .replace(/'/g, "'") // Escape single quotes
             .trim();
 
         // Step 4: Limit title to the first 7 words
-        cleanedTitle = this.getFirst7WordsIfLong(cleanedTitle);
+        cleanedTitle = this.getFirst5WordsIfLong(cleanedTitle);
 
         // Step 5: Decode URI-encoded components
         try {
@@ -333,21 +334,47 @@ class BrowserHistory {
             cleanedTitle = cleanedTitle.substring(0, cleanedTitle.indexOf(encodedChar)).trim();
         }
 
+        if (cleanedTitle.includes("'")) {
+            cleanedTitle = cleanedTitle.substring(0, cleanedTitle.indexOf("'")).trim();
+        }
+
+        if (browserName == browsers.EDGE) {
+            cleanedTitle = this.gettingFilterTitleForEdgeOnly(cleanedTitle);
+            console.log(" ***** For Edge Title Filter ***** ", cleanedTitle);
+        }
+
         // Final clean-up to ensure no residual browser name or excess whitespace
-        return cleanedTitle.replace(browserNamePattern, "").trim();
+        return cleanedTitle.replace(browserNamePattern, "").replace(browserNamePatternTwo, "").trim();
     };
 
-    getFirst7WordsIfLong(str) {
+    getFirst5WordsIfLong(str) {
         const words = str.trim().split(/\s+/).filter(Boolean);
         if (words.length > 10) {
             // Get the first 7 words and join them into a string
-            return words.slice(0, 7).join(' '); // Adding ellipsis for truncation
+            return words.slice(0, 5).join(' '); // Adding ellipsis for truncation
         } else {
             // If the string has 10 or fewer words, return the original string
             return str;
         }
     }
 
+    gettingFilterTitleForEdgeOnly(title) {
+        // Remove "and X more pages"
+        let result = title.replace(/ and \d+ more pages/, '');
+
+        // Extract the part before the '-'
+        let beforeDash = result.split(' - ')[0];
+        return beforeDash;
+    }
+
+    getDomainFromTitle(title) {
+        const domainRegex = /\b([a-zA-Z0-9-]+\.(com|org|net|edu|gov|io|ai|co|info|biz|me|tv|us|uk|ca|au|de|jp|fr|cn|ru|in|es|it|nl|se|no|fi|pl|ch|be|mx|br|ar|za|nz|sg|hk|tr|sa|ae))\b/;
+        const match = title.match(domainRegex);
+
+        if (match !== null && match.length) {
+            return match[0];
+        }
+    }
 
 }
 

@@ -13,8 +13,12 @@ class GetSuperseeWindowWithActiveWin extends BrowserHistory {
      */
     async activeWindow(currentApplication, browserLists) {
         try {
+            if (!currentApplication.owner) {
+                return [];
+            }
+
             const applicationName = currentApplication.owner.name.toLowerCase();
-            const browser = browserLists?.find(browser => applicationName.includes(browser.title.toLowerCase()));
+            const browser = browserLists?.find(browser => browser.title.toLowerCase().includes(applicationName) || applicationName.toLowerCase().includes(browser.title.toLowerCase()));
 
             if (!browser) {
                 currentApplication.isBrowser = false;
@@ -35,8 +39,10 @@ class GetSuperseeWindowWithActiveWin extends BrowserHistory {
                     browserOrigin = url.origin;
                 } // Use origin if available, otherwise full URL
                 currentApplication.url = browserOrigin;
-                console.log("Current Browser Tab URL:", url);
             } else {
+                if (this.getDomainFromTitle(currentApplication.title)) {
+                    currentApplication.title = this.getDomainFromTitle(currentApplication.title);
+                }
                 currentApplication.url = "";
             }
 
@@ -55,18 +61,38 @@ class GetSuperseeWindowWithActiveWin extends BrowserHistory {
      */
     async getBrowserUrl(currentBrowserName, applicationTitle) {
         try {
+            // Fetch browser history by name and application title
             const history = await this.getBrowserHistoryByName(currentBrowserName, applicationTitle);
-            if (history.length > 0) {
-                const browserUrl = history[0].url;
-                console.log("******** Current application URL ********", browserUrl);
+
+            // Helper function to extract the URL from the history
+            const extractUrlFromHistory = (history) => {
+                const browserUrl = history[0]?.url;
                 return browserUrl;
+            };
+
+            // Return URL immediately if history is available
+            if (history.length > 0) {
+                return extractUrlFromHistory(history);
             }
+
+            // Retry mechanism to get the URL from history
+            let intervalIteration = 0;
+            while (intervalIteration < 5) {
+                const historyInRecursion = await this.getBrowserHistoryByName(currentBrowserName, applicationTitle);
+                if (historyInRecursion.length > 0) {
+                    return extractUrlFromHistory(historyInRecursion);
+                }
+                intervalIteration++;
+            }
+
+            // Return empty string if no URL is found
             return "";
         } catch (error) {
             console.error("Error retrieving browser history:", error);
             return "";
         }
     }
+
 }
 
 module.exports = GetSuperseeWindowWithActiveWin;
