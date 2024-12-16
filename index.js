@@ -47,11 +47,4 @@ class GetSuperseeWindow {
         }
     }
 }
-
-const getWindows = new GetSuperseeWindow();
-setInterval(() => {
-    console.clear();
-    getWindows.getActiveWindowWithUrl();
-}, 5000);
-
 module.exports = GetSuperseeWindow;
