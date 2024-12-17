@@ -11,7 +11,7 @@ class GetSuperseeWindow {
     constructor() { }
 
     setBrowsersList(browserLists) {
-        this.fileOperation.saveBrowserList(browserLists);
+        return this.fileOperation.saveBrowserList(browserLists);
     }
 
     getBrowserList() {
