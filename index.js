@@ -35,12 +35,10 @@ class GetSuperseeWindow {
 
             const currentApp = await this.getSuperseeWin.activeWindow(currentApplication, browserList);
 
-            if (currentApp) {
-                console.log("\nCurrent application with URL:", currentApp, "\n");
+            if (currentApp) {                
                 return currentApp;
             }
-
-            console.log("Current application is not a browser.");
+            
             return { ...currentApplication, isBrowser: false }; // Mark as non-browser
         } catch (error) {
             console.error("Error retrieving active window or URL:", error.message);

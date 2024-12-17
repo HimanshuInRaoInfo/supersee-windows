@@ -132,9 +132,7 @@ class BrowserHistory {
                 }
 
                 db.close();
-            }
-
-            console.log("\n ********** History Data ********** \n", historyData);
+            }            
 
             // Clean up temporary files
             this.deleteTempFiles(dbPaths);
@@ -164,8 +162,7 @@ class BrowserHistory {
                 return [];
             }
 
-            const browserPath = browserPaths[0];
-            console.log("Browser Path for Maxthon:", browserPath);
+            const browserPath = browserPaths[0];            
 
             const sql = `
             SELECT DISTINCT 
@@ -339,8 +336,7 @@ class BrowserHistory {
         }
 
         if (browserName == browsers.EDGE) {
-            cleanedTitle = this.gettingFilterTitleForEdgeOnly(cleanedTitle);
-            console.log(" ***** For Edge Title Filter ***** ", cleanedTitle);
+            cleanedTitle = this.gettingFilterTitleForEdgeOnly(cleanedTitle);            
         }
 
         // Final clean-up to ensure no residual browser name or excess whitespace

@@ -26,7 +26,11 @@ class FileOperation {
 
             // Write to file
             fs.writeFileSync(this.filePath, JSON.stringify(createObjectBrowserList, null, 2), 'utf8');
-            console.log("File created successfully.");
+
+            return {
+                status: "success",
+                filePath: this.filePath
+            }
         } catch (error) {
             console.error('Error saving the browser list:', error.message);
             throw new Error(`Failed to create the file: ${this.filePath}`);
