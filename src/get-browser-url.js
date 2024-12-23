@@ -3,7 +3,7 @@ const browsers = require("electron-browser-history/browsers.js");
 const Database = require("better-sqlite3");
 const fs = require("fs");
 const path = require("path");
-const { tmpdir } = require("os");
+const { tmpdir, type } = require("os");
 const uuidV4 = require("uuid").v4;
 
 class BrowserHistory {
@@ -32,7 +32,6 @@ class BrowserHistory {
             if (!defaultPath) {
                 throw new Error(`Browser ${browserName} is not supported.`);
             }
-
             return browsers.findPaths(defaultPath, browserName);
         } catch (error) {
             console.error("Error in getBrowserPath:", error);
@@ -55,13 +54,17 @@ class BrowserHistory {
 
             const dbPaths = [];
             let historyData = [];
-
             for (const browserPath of browserPaths) {
                 const tempDir = this.getTempDir();
                 const tempDbPath = path.join(tempDir, `${uuidV4()}.sqlite`);
+                await fs.copyFileSync(browserPath, tempDbPath);
                 dbPaths.push(tempDbPath);
-                fs.copyFileSync(browserPath, tempDbPath);
-                const db = new Database(browserPath);
+                let db;
+                if (type() == "Linux") {
+                    db = new Database(tempDbPath);
+                } else {
+                    db = new Database(browserPath);
+                }
 
                 const sql = `
                     SELECT DISTINCT 
@@ -175,7 +178,6 @@ class BrowserHistory {
             ORDER BY zlastvisittime DESC 
             LIMIT 1 OFFSET 0;
         `;
-            // console.log("SQL Query for Maxthon-Based Browser:", sql);
 
             return await getDataFromDatabase(browserPath, sql);
         } catch (error) {
@@ -193,6 +195,13 @@ class BrowserHistory {
      */
     getBrowserHistoryByName = async (browserName, title) => {
         try {
+            if (["Google-chrome", "google-chrome"].some(substring => browserName.includes(substring))) {
+                browserName = browsers.CHROME;
+            }
+            if (["Firefox", "firefox"].some(substring => browserName.includes(substring))) {
+                browserName = browsers.FIREFOX;
+            }
+
             switch (browserName) {
                 case browsers.FIREFOX:
                 case browsers.SEAMONKEY:
@@ -211,7 +220,7 @@ class BrowserHistory {
                     return await this.getMaxthonBasedBrowserHistory(browserName, title);
 
                 default:
-                    console.warn(`Unsupported browser: ${browserName}`);
+                    console.warn(`Unsupported browser: ${browserName}, ${browsers.CHROME}`);
                     return [];
             }
         } catch (error) {
