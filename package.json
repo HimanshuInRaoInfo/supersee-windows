@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/HimanshuInRaoInfo/supersee-windows#readme",
   "dependencies": {
-    "active-win": "github:RaoInfotech/ss-active-win",
+    "active-win": "^8.1.1",
     "bindings": "^1.5.0",
     "electron-browser-history": "github:RaoInfotech/ss-electron-browser-history",
     "uuid": "^11.0.3"
