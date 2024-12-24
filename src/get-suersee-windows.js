@@ -17,6 +17,11 @@ class GetSuperseeWindowWithActiveWin extends BrowserHistory {
                 return [];
             }
 
+            if (currentApplication && currentApplication.url) {
+                currentApplication.isBrowser = true;
+                return currentApplication;
+            }
+
             const applicationName = currentApplication.owner.name.toLowerCase();
             const browser = browserLists?.find(browser => browser.title.toLowerCase().includes(applicationName) || applicationName.toLowerCase().includes(browser.title.toLowerCase()));
 
