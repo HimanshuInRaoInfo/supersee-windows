@@ -19,6 +19,7 @@
   "dependencies": {
     "active-win": "git+https://github.com/HimanshuInRaoInfo/get-windows.git",
     "bindings": "^1.5.0",
+    "ss-get-win": "^8.1.1",
     "electron-browser-history": "github:RaoInfotech/ss-electron-browser-history",
     "uuid": "^11.0.3"
   }
